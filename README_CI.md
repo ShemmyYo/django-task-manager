@@ -658,3 +658,180 @@ Note: Run server to view output (must delete all items in list)
 ---------------------------------
 
 
+Hello Django Instructions Sheet
+Part 6: Rendering a Create New Item page
+Note: While our superuser has full functionality using the admin panel, we also want our general users to be able to Create, Read, Update, and Delete resources on the front end. This is referred to as CRUD functionality (Create, Read, Update and Delete). 
+
+6.1. Duplicate the todo_list.html file
+
+In todo / templates / todo:
+
+#
+Step
+Code
+Your Notes
+1
+Duplicate the todo_list.html file
+e.g. Rename as “add_item.html”
+Note: You can Copy and Paste the file in the same folder to duplicate.
+
+
+In todo / templates / todo / add_item.html:
+
+#
+Step
+Code
+Your Notes
+2
+Delete the table and its contents
+<table>
+      ...
+</table>
+
+
+3
+Update the heading
+<body>
+    <h1>Add a ToDo Item:</h1>
+</body>
+
+
+
+
+In todo / templates / todo / todo_list.html:
+
+#
+Step
+Code
+Your Notes
+4
+Add a link to the add_item file
+<a href = "/add">Add an Item</a>
+Note: Place below the table
+
+
+6.2. Add views
+
+In todo / views.py:
+
+#
+Step
+Code
+Your Notes
+5
+Create an add_item view
+def add_item(request):
+    return render(request, 'todo/add_item.html')
+Note: Place below the get_todo_list method.
+
+
+
+6.3. Add urls
+
+In django_todo / urls.py:
+
+#
+Step
+Code
+Your Notes
+6
+Create new add_item path, and import add_item
+from django.contrib import admin
+from django.urls import path
+from todo.views import get_todo_list, add_item
+
+urlpatterns = [
+    path('admin/', admin.site.urls),
+    path('', get_todo_list, name='get_todo_list'),
+    path('add', add_item, name='add'),
+]
+
+
+
+
+Note: Run server to view output
+
+
+6.4. Add an Add Item Form
+
+Note: Django Forms are basically used for taking input from the user in some manner and using that information for logical operations on databases. For example, registering a user by taking input as his name, email, password, etc.
+
+In todo / templates / todo / add_item.html:
+
+#
+Step
+Code
+Your Notes
+7
+Create a form to enter your new item information
+    <form method="POST" action="add">
+        <div>
+            <p>
+                <label for = "id_name">Name:</label>
+                <input type="text" id="id_name" name="item_name" />
+            </p>
+        </div>
+        <div>
+            <p>
+                <label for = "id_done">Done:</label>
+                <input type="checkbox" id="id_done" name="done" />
+            </p>
+        </div>
+        <div>
+            <p>
+                <button type="submit">Add Item</button>
+            </p>
+        </div>
+    </form>
+Note: Place below the h1 tag
+
+
+6.5. Add a Template Tag
+
+Note: Template Tags are used to secure the data being sent 
+
+In todo / templates / todo / add_item.html:
+
+#
+Step
+Code
+Your Notes
+8
+Add csrf token tag
+{% csrf_token %}
+Note: Place just inside the form tag
+
+
+
+6.6. Handle Form Submit Action
+
+In todo / views.py:
+
+#
+Step
+Code
+Your Notes
+9
+import redirect
+from django.shortcuts import render, redirect
+
+
+10
+Handle Form Submit
+def add_item(request):
+    if request.method == 'POST':
+        name = request.POST.get('item_name')
+        done = 'done' in request.POST
+        Item.objects.create(name=name, done=done)
+
+        return redirect('get_todo_list')
+    return render(request, 'todo/add_item.html')
+
+
+Note: Place within the add_item function
+
+
+Note: Run server to view output
+
+_________________________
+
