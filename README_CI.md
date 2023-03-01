@@ -835,3 +835,464 @@ Note: Run server to view output
 
 _________________________
 
+Hello Django Instructions Sheet
+Part 7: Modifying Data
+
+7.1. Using Forms
+
+In the File Tree:
+
+#
+Step
+Code
+Your Notes
+1
+In the APP folder i.e. todo, create a new file, forms.py
+e.g. todo / forms.py
+
+
+
+
+In todo / forms.py:
+
+#
+Step
+Code
+Your Notes
+2
+Add your imports
+from django import forms
+from .models import Item
+
+
+3
+Create your ItemForm class
+class ItemForm(forms.ModelForm): 
+    class Meta:
+        model = Item
+        fields = ['name', 'done']
+
+
+Note: the Meta class gives our form some information about itself, such as which fields to render, or how to display errors
+
+Note: Remember, the fields: ‘name’ and ‘done’, have already been defined in models.py
+
+
+
+In todo / views.py:
+
+#
+Step
+Code
+Your Notes
+4
+Import the ItemForm
+…
+from .forms import ItemForm
+
+
+5
+Create an instance of the ItemForm and add the context
+def add_item(request):
+    if request.method == 'POST':
+        …
+        return redirect('get_movie_list')
+    form = ItemForm()
+    context = {
+        'form': form
+    }
+    return render(request, 'todo/add_item.html', context)
+Note: Don’t forget to return the context to the template in the render method
+
+
+
+
+
+In todo / templates / todo / add_item.html:
+
+#
+Step
+Code
+Your Notes
+4
+Delete the initial 2 divs containing the input fields
+<form method="POST" action="add">
+        {% csrf_token %}
+        <div>
+            <p>
+                <label for = "id_name">Name: </label>
+                <input type="text" id="id_name" name="item_name" />
+            </p>
+        </div>
+        <div>
+            <p>
+                <label for = "id_done">Done: </label>
+                <input type="checkbox" id="id_done" name="done" />
+            </p>
+        </div>
+        <div>
+            <p>
+                <button type="submit">Add Item</button>
+            </p>
+        </div>
+    </form>
+Note: Leave the div containing the submit button
+5
+Replace these divs with the form template variable
+<form method="POST" action="add">
+        {% csrf_token %}
+        {{ form }}
+        <div>
+            <p>
+                <button type="submit">Add Item</button>
+            </p>
+        </div>
+    </form>
+
+
+
+
+Note: At this stage, running the code will give an integrity error. This is because in views.py / add_item, we are still creating our form items manually, whereas we should let our new form ‘forms.py’ do this.
+
+
+In todo / views.py:
+
+#
+Step
+Code
+Your Notes
+6
+Replace the name and done fields, and Item.objects.create
+def add_item(request):
+    if request.method == 'POST':
+        form  = ItemForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('get_todo_list')
+    form = ItemForm()
+    context = {
+        'form': form
+    }
+    return render(request, 'todo/add_item.html', context)
+
+
+
+
+In todo / templates / todo / add_item.html:
+
+#
+Step
+Code
+Your Notes
+7
+Adjust the styling of the form
+<form method="POST" action="add">
+        {% csrf_token %}
+        {{ form.as_p }}
+Note: Adjusts to vertical styling
+
+
+
+7.2. Editing an Item
+
+In todo / templates / todo / todo_list.html:
+
+#
+Step
+Code
+Your Notes
+1
+Add an edit button to each table row 
+ <table>
+        {% for item in items %}
+            ...
+                {% endif %}
+                <td>
+                    <a href="/edit/{{ item.id }}">
+                        Edit
+                    </a>
+                </td>
+            </tr>
+            ...
+        {% endfor %}
+    </table>
+Note: Place it within the for loop, below the endif statement
+
+Note: The Postgres database will automatically create an id for each item you add. You can then use this item id as a url identifier. 
+
+
+
+In the File Tree:
+
+#
+Step
+Code
+Your Notes
+2
+In the todo / templates / todo folder, duplicate the add_item.html file
+Rename to edit_item.html
+
+
+
+
+In todo / templates / todo / edit_item.html:
+
+#
+Step
+Code
+Your Notes
+3
+Adjust the code
+<body>
+    <h1>Edit a ToDo Item:</h1>
+    <form method="POST" action="add">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <div>
+            <p>
+                <button type="submit">Update Item</button>
+            </p>
+        </div>
+    </form>
+</body>
+Important: Don’t forget to delete the action property, as shown.
+
+
+
+In django_todo / urls.py:
+
+#
+Step
+Code
+Your Notes
+4
+Add path
+urlpatterns = [
+    ...
+    path('edit/<item_id>', edit_item, name='edit'),
+]
+Note: edit/<item_id> links to the edit_item page for a particular item_id. This item_id has been automatically created. 
+5
+Import edit_item
+...
+from todo.views import get_todo_list, add_item, edit_item
+
+
+
+
+Note: Run server to view output (form still incomplete)
+
+In todo / views.py:
+
+#
+Step
+Code
+Your Notes
+6
+Create an instance of the form and return it as a context
+def edit_item(request, item_id):
+    item = get_object_or_404(Item, id=item_id)
+    form = ItemForm(instance=item)
+    context = {
+        'form': form
+    }
+    return render(request, 'todo/edit_item.html', context)
+Note: Don’t forget to add ‘item_id’ as a parameter to your function. 
+
+Note: get_object_or_404 will either return the item if it exists or return a 404 error.
+7
+Import the get_object_or_404 shortcut
+from django.shortcuts import render, redirect, get_object_or_404
+
+
+
+
+Note: Run server to view output (update functionality still not working)
+
+In todo / views.py:
+
+#
+Step
+Code
+Your Notes
+6
+Add the POST handle functionality (similar to add_item)
+def edit_item(request, item_id):
+    item = get_object_or_404(Item, id=item_id)
+    if request.method == 'POST':
+        form=ItemForm(request.POST, instance=item)
+        if form.is_valid():
+            form.save()
+            return redirect('get_todo_list')
+    form = ItemForm(instance=item)
+    context = {
+        'form': form
+    }
+    return render(request, 'todo/edit_item.html', context)
+
+
+
+
+Note: Run server to view output
+
+7.3. Toggling an Item
+
+In todo / templates / todo / todo_list.html:
+
+#
+Step
+Code
+Your Notes
+1
+Add a toggle button to each table row 
+   <table>
+        {% for item in items %}
+           ...
+                {% endif %}
+                <td>
+                    <a href="/toggle/{{ item.id }}">
+                        Toggle
+                    </a>
+                </td>
+               ...
+        {% endfor %}
+    </table>
+Note: Place below the endif statement above the edit row
+
+
+In django_todo / urls.py
+
+#
+Step
+Code
+Your Notes
+2
+Add a path
+urlpatterns = [
+    ...
+    path('toggle/<item_id>', toggle_item, name='toggle'),
+]
+
+
+3
+Import toggle_item
+…
+​​from todo.views import get_todo_list, add_item, edit_item, toggle_item
+
+
+
+
+In django_todo / urls.py
+
+Note: As our imports are now getting quite long, we can instead import from views.
+
+#
+Step
+Code
+Your Notes
+4
+Remove the existing imports
+…
+​​from todo.views import get_todo_list, add_item, edit_item, toggle_item
+
+
+5
+Replace with import views
+…
+​​from todo import views
+
+
+6
+Adjust each path view by adding views.(view_name)
+urlpatterns = [
+    path('admin/', admin.site.urls),
+    path('', views.get_todo_list, name='get_todo_list'),
+    path('add', views.add_item, name='add'),
+    path('edit/<item_id>', views.edit_item, name='edit'),
+    path('toggle/<item_id>', views.toggle_item, name='toggle'),
+]
+Note: Don’t forget to adjust the rest of the paths as well as the toggle path
+
+
+
+In todo / views.py
+
+#
+Step
+Code
+Your Notes
+7
+Add toggle_item view function
+def toggle_item(request, item_id):
+    item = get_object_or_404(Item, id=item_id)
+    item.done = not item.done
+    item.save()
+    return redirect('get_todo_list')
+Note: Place below (but separate) to the edit_item function
+
+
+Note: Run server to view output
+
+
+7.4. Deleting an Item
+
+In todo / views.py
+
+#
+Step
+Code
+Your Notes
+1
+Add the delete_item view function
+def delete_item(request, item_id):
+    item = get_object_or_404(Item, id=item_id)
+    item.delete()
+    return redirect('get_todo_list')
+Note: Place below the toggle_item function
+
+
+
+In django_todo / urls.py
+
+#
+Step
+Code
+Your Notes
+2
+Add a delete path
+urlpatterns = [
+    ...
+    path('delete/<item_id>', views.delete_item, name='delete'),
+]
+Note: Don’t need to import the view this time.
+
+
+
+In todo / templates / todo / todo_list.html:
+
+#
+Step
+Code
+Your Notes
+3
+Add a delete button to each table row 
+    <table>
+        {% for item in items %}
+            ...
+                <td>
+                    <a href="/delete/{{ item.id }}">
+                        Delete
+                    </a>
+                </td>
+            </tr>
+            {% empty %}
+            ...
+        {% endfor %}
+    </table>
+Note: Place below the edit button row
+
+
+
+_________________________________
+
+
