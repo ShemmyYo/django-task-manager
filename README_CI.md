@@ -1295,4 +1295,385 @@ Note: Place below the edit button row
 
 _________________________________
 
+Hello Django Instructions Sheet
+Part 8: Testing
+Note: ​​When you’re writing new code, you should use tests to validate that your code works as expected.
+
+8.1. Introduction to Django Testing
+
+In todo / tests.py
+
+#
+Step
+Code
+Your Notes
+1
+Create your first test
+class TestDjango(TestCase):
+
+    def test_this_thing_works(self):
+        self.assertEqual(1, 0)
+
+
+
+
+
+
+
+In the Terminal
+
+#
+Step
+Code
+Your Notes
+2
+Run tests
+python3 manage.py test
+Note: Test fails. Try making it pass yourself.
+
+
+
+In todo / tests.py
+
+#
+Step
+Code
+Your Notes
+3
+Replace the current test with 4 more tests
+class TestDjango(TestCase):
+
+    def test_this_thing_works(self):
+        self.assertEqual(1, 1)
+
+    def test_this_thing_works2(self):
+        self.assertEqual(1, 3)
+
+    def test_this_thing_works3(self):
+        self.assertEqual(1, )
+
+    def test_this_thing_works4(self):
+        self.assertEqual(1, 4)
+Note:
+pass (.)
+fail (F)
+error (E)
+fail (F)
+
+
+Note: Run Tests in terminal again.
+
+In todo / tests.py
+
+#
+Step
+Code
+Your Notes
+4
+Delete all but the first test
+class TestDjango(TestCase):
+
+    def test_this_thing_works(self):
+        self.assertEqual(1, 1)
+
+
+
+
+
+In the Terminal
+
+#
+Step
+Code
+Your Notes
+5
+Rename the test file
+e.g. test_views.py
+
+
+6
+Create 2 new files
+e.g. test_models.py,
+e.g. test_forms.py
+Note: you should have 3 test files in total.
+
+
+
+8.2. Testing Forms
+
+In todo / test_forms.py
+
+#
+Step
+Code
+Your Notes
+1
+Add your imports
+from django.test import TestCase
+from .forms import ItemForm
+
+
+2
+Create your first test
+class TestItemForm(TestCase):
+
+    def test_item_name_is_required(self):
+        form = ItemForm({'name': ''})
+        self.assertFalse(form.is_valid())
+        self.assertIn('name', form.errors.keys())
+        self.assertEqual(form.errors['name'][0], 'This field is required.')
+Note: 
+creates a form instance with an empty name field
+checks this field is not valid
+checks that there is a ‘name’ key in the dictionary of form errors
+Check whether the error message on the name key is “This field is required.”
+3
+Create your second test
+    def test_done_field_is_not_required(self):
+        form = ItemForm({'name': 'Test Todo Items'})
+        self.assertTrue(form.is_valid())
+Note:
+Create a form instance with a name field of ‘Test Todo Items’
+Checks that this instance is valid (even without selecting a ‘done’ status)
+4
+Create your third test
+    def test_fields_are_explicit_in_form_metaclass(self):
+        form = ItemForm()
+        self.assertEqual(form.Meta.fields, ['name', 'done'])
+Note:
+Create an empty form instance 
+check that the meta fields are equal to ‘name’ and ‘done.
+
+
+In the Terminal
+
+#
+Step
+Code
+5
+Run a specific test e.g. test_forms.py
+python3 manage.py test todo.test_forms
+6
+Run a specific class of tests
+python3 manage.py test todo.test_forms.TestItemForm
+7
+Run an individual test
+python3 manage.py test todo.test_forms.TestItemForm.test_fields_are_explicit_in_form_metaclass
+
+
+8.3. Testing Views
+
+In todo / test_views.py
+
+#
+Step
+Code
+Your Notes
+1
+Add your imports
+from django.test import TestCase
+from .models import Item
+
+
+2
+Create your first test
+class TestViews(TestCase):
+
+    def test_get_todo_list(self):
+        response = self.client.get('/')
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'todo/todo_list.html')
+Note: 
+Save the homepage instance (‘/’) as response
+check that the response code is 200
+check that the template used, ‘todo/todo_list.html’ is the same as ‘response’
+3
+Create your second test
+    def test_get_add_item_page(self):
+        response = self.client.get('/add')
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'todo/add_item.html')
+Note: Similar to test_get_todo_list. Don’t forget to adjust the url and template name.
+4
+Create your third test
+    def test_get_edit_item_page(self):
+        item = Item.objects.create(name='Test Todo Item')
+        response = self.client.get(f'/edit/{item.id}')
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'todo/edit_item.html')
+Note: 
+create an Item Object
+save the response for that item
+assert this item response code is 200
+assert the template used is ‘edit_item.html’
+5
+Create your fourth test
+    def test_can_add_item(self):
+        response = self.client.post('/add', {'name': 'Test Added Item'})
+        self.assertRedirects(response, '/')
+
+
+Note: 
+Create a new item 
+check it redirects to the home page
+6
+Create your fifth test
+    def test_can_delete_item(self):
+        item = Item.objects.create(name='Test Todo Item')
+        response = self.client.get(f'/delete/{item.id}')
+        self.assertRedirects(response, '/')
+        existing_items = Item.objects.filter(id=item.id)
+        self.assertEqual(len(existing_items), 0)
+Note: 
+Create a new item object instance
+delete this item
+assert that it redirects to the home page
+Try to return the item from the database using filter and the item_id
+Check the length of existing_items = 0
+7
+Create your sixth test
+    def test_can_toggle_item(self):
+        item = Item.objects.create(name='Test Todo Item', done=True)
+        response = self.client.get(f'/toggle/{item.id}')
+        self.assertRedirects(response, '/')
+        updated_item = Item.objects.get(id=item.id)
+        self.assertFalse(updated_item.done)
+
+
+Note: 
+Create a new item object instance with done=True
+toggle this item so done=False
+assert that it redirects to the home page
+Get the item again and save as updated_item
+Check the done status is False
+
+
+Note: You should run each of your tests as you write them to reduce the chances of making an error. 
+
+Note: If you do fail any tests, be sure to read your Error Messages. 
+8.4. Testing Models
+
+In todo / test_models.py
+
+#
+Step
+Code
+Your Notes
+1
+Add your imports
+from django.test import TestCase
+from .models import Item
+
+
+2
+Create your first test
+class TestModels(TestCase):
+
+    def test_done_defaults_to_false(self):
+        item = Item.objects.create(name='Test Todo Item')
+        self.assertFalse(item.done)
+
+
+Note:
+create a new item instance
+check that item.done is False
+
+
+Note: Run tests
+
+
+8.5. Coverage
+
+Note: We can use this tool to check what percentage of our code we have actually tested.
+
+In the Terminal:
+
+#
+Step
+Code
+Your Notes
+1
+Install the Coverage tool
+pip3 install coverage
+
+
+2
+Run Coverage
+coverage run --source=todo manage.py test
+
+
+3
+View Coverage Report
+coverage report
+Note: Check Report Results. 
+4. 
+Create HTML Report
+coverage html
+
+
+5
+View HTML Report
+python3 -m http.server
+Note: Check Report Results. 
+
+
+Note: Our report shows us we haven’t fully tested our application. We should now complete our tests using the report.
+
+In the Browser:
+
+#
+Step
+Code
+Your Notes
+6
+Open the .htmlcov folder in the html directory
+e.g. .htmlcov
+
+
+*
+Click to view different files
+e.g. todo/models.py
+Note: Haven’t tested the string method.
+
+
+In todo / test_models.py:
+
+#
+Step
+Code
+Your Notes
+7
+Create a test for the string method
+    def test_item_string_method_returns_name(self):
+        item = Item.objects.create(name='Test Todo Item')
+        self.assertEqual(str(item), 'Test Todo Item')
+Note:
+Create a new item instance
+Check it equals to the string returned by the __str__ method i.e. self.name
+
+
+Note: Rerun coverage, regenerate the report, and check again. 
+
+In todo / test_views.py:
+#
+Step
+Code
+Your Notes
+8
+Create a test for ‘can edit item’
+    def test_can_edit_item(self):
+        item = Item.objects.create(name='Test Todo Item')
+        response = self.client.post(f'/edit/{item.id}', {'name': 'Updated Name'})
+        self.assertRedirects(response, '/')
+        updated_item = Item.objects.get(id=item.id)
+        self.assertEqual(updated_item.name, 'Updated Name')
+Note: 
+Create an item Instance
+Edit the item using Post to “Updated Name”
+Check it redirects to home
+Save the edited item as updated_item
+Check this edited item equals ‘Updated Name”
+
+
+Note: Rerun coverage, regenerate the report, and check again. We have achieved a 97% coverage score. 
 
